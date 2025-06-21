@@ -68,7 +68,6 @@ const approveDocument = async (req, res) => {
 
 const fs = require("fs");
 const path = require("path");
-const Document = require("../models/Document");
 
 const deleteDocument = async (req, res) => {
   try {
