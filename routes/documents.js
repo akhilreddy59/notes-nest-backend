@@ -24,7 +24,8 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // ✅ Route with `upload.single()` and proper field parsing
-router.post("/upload", upload.single("file"), uploadDocument);
+router.post("/upload", uploadDocument);
+
 router.get("/approved", getApprovedDocuments);
 router.get("/pending", getPendingDocuments);
 router.patch("/approve/:id", approveDocument);

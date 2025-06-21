@@ -1,16 +1,14 @@
 const Document = require("../models/Document");
 
-// POST /upload - User uploads a document
+// ✅ POST /upload - User uploads a document (via Drive Link only)
 const uploadDocument = async (req, res) => {
   try {
-    console.log("req.body:", req.body);
-    console.log("req.file:", req.file);
+    console.log("Upload Request:", req.body);
 
     const { title, subject, contributor, driveLink, category } = req.body;
-    const filePath = req.file ? req.file.path : null;
 
-    if (!filePath) {
-      return res.status(400).json({ error: "File is missing" });
+    if (!title || !subject || !contributor || !driveLink || !category) {
+      return res.status(400).json({ error: "Missing required fields." });
     }
 
     const newDoc = new Document({
@@ -19,19 +17,19 @@ const uploadDocument = async (req, res) => {
       contributor,
       driveLink,
       category,
-      file: filePath,
+      file: null, // No local file
       status: "pending",
     });
 
     await newDoc.save();
-    res.status(201).json({ message: "Submitted for admin approval." });
+    res.status(201).json({ message: "✅ Submitted for admin approval." });
   } catch (err) {
-    console.error("Upload error:", err.message);
-    res.status(500).json({ error: err.message });
+    console.error("❌ Upload error:", err.message);
+    res.status(500).json({ error: "Server error during upload." });
   }
 };
 
-// GET /approved - Get all approved documents
+// ✅ GET /approved - Get all approved documents
 const getApprovedDocuments = async (req, res) => {
   try {
     const docs = await Document.find({ status: "approved" }).sort({
@@ -43,7 +41,7 @@ const getApprovedDocuments = async (req, res) => {
   }
 };
 
-// GET /pending - Get all pending documents (for admin)
+// ✅ GET /pending - Get all pending documents (admin)
 const getPendingDocuments = async (req, res) => {
   try {
     const docs = await Document.find({ status: "pending" }).sort({
@@ -55,20 +53,18 @@ const getPendingDocuments = async (req, res) => {
   }
 };
 
-// PATCH /approve/:id - Admin approves a document
+// ✅ PATCH /approve/:id - Admin approves a document
 const approveDocument = async (req, res) => {
   try {
     const { id } = req.params;
     await Document.findByIdAndUpdate(id, { status: "approved" });
-    res.json({ message: "Document approved." });
+    res.json({ message: "✅ Document approved." });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-const fs = require("fs");
-const path = require("path");
-
+// ✅ DELETE /delete/:id - Admin deletes a document
 const deleteDocument = async (req, res) => {
   try {
     const doc = await Document.findById(req.params.id);
@@ -76,18 +72,11 @@ const deleteDocument = async (req, res) => {
       return res.status(404).json({ error: "Note not found" });
     }
 
-    // ✅ Delete file from uploads folder
-    const filePath = path.join(__dirname, "..", "uploads", doc.file);
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-    }
-
-    // ✅ Delete from DB
+    // ❌ No file deletion (Drive Link only)
     await Document.findByIdAndDelete(req.params.id);
-
-    res.json({ message: "Note and file deleted successfully." });
+    res.json({ message: "✅ Note deleted successfully." });
   } catch (err) {
-    console.error("❌ Error deleting document:", err);
+    console.error("❌ Error deleting document:", err.message);
     res.status(500).json({ error: "Server error during deletion." });
   }
 };
@@ -97,5 +86,5 @@ module.exports = {
   getApprovedDocuments,
   getPendingDocuments,
   approveDocument,
-  deleteDocument, // ✅ Make sure this is exported
+  deleteDocument,
 };
