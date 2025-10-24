@@ -9,6 +9,7 @@ const {
   getPendingDocuments,
   approveDocument,
   deleteDocument,
+  adminLogin,
 } = require("../controllers/documentController");
 
 // ✅ Set up multer storage
@@ -24,7 +25,11 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // ✅ Route with `upload.single()` and proper field parsing
-router.post("/upload", uploadDocument);
+// Accept an optional file under the field name 'file'. Controller will handle file vs driveLink.
+router.post("/upload", upload.single("file"), uploadDocument);
+
+// Admin login route (returns JWT)
+router.post("/admin/login", express.json(), adminLogin);
 
 router.get("/approved", getApprovedDocuments);
 router.get("/pending", getPendingDocuments);
