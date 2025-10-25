@@ -1,34 +1,26 @@
-const fs = require("fs");
-const path = require("path");
 const jwt = require("jsonwebtoken");
 const Document = require("../models/Document");
 
-// ✅ POST /upload - User uploads a document (via Drive Link only)
+// Submit a new document (drive link only)
 const uploadDocument = async (req, res) => {
   try {
     console.log("Upload Request:", req.body);
 
     const { title, subject, contributor, driveLink, category } = req.body;
 
-    if (!title || !subject || !contributor || !category) {
-      return res.status(400).json({ error: "Missing required fields." });
-    }
-
-    const uploadedFile = req.file ? req.file.path : null;
-
-    if (!driveLink && !uploadedFile) {
-      return res
-        .status(400)
-        .json({ error: "Either driveLink or a file upload is required." });
+    if (!title || !subject || !contributor || !driveLink || !category) {
+      return res.status(400).json({
+        error:
+          "Missing required fields. Please provide title, subject, contributor, driveLink, and category.",
+      });
     }
 
     const newDoc = new Document({
       title,
       subject,
       contributor,
-      driveLink: driveLink || null,
+      driveLink,
       category,
-      file: uploadedFile,
       status: "pending",
     });
 
@@ -75,26 +67,12 @@ const approveDocument = async (req, res) => {
   }
 };
 
-// ✅ DELETE /delete/:id - Admin deletes a document
+// Delete a document by ID (admin only)
 const deleteDocument = async (req, res) => {
   try {
     const doc = await Document.findById(req.params.id);
     if (!doc) {
       return res.status(404).json({ error: "Note not found" });
-    }
-
-    if (doc.file) {
-      const filePath = path.isAbsolute(doc.file)
-        ? doc.file
-        : path.join(__dirname, "..", doc.file);
-
-      fs.unlink(filePath, (err) => {
-        if (err) {
-          console.warn(`Unable to delete file at ${filePath}:`, err.message);
-        } else {
-          console.log(`Deleted file: ${filePath}`);
-        }
-      });
     }
 
     await Document.findByIdAndDelete(req.params.id);
