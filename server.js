@@ -2,14 +2,21 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 require("dotenv").config();
+const adminRoutes = require("./routes/admin");
 
 const documentRoutes = require("./routes/documents");
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Configure CORS using a whitelist. Set FRONTEND_URLS (comma-separated) or FRONTEND_URL in environment.
-const rawOrigins = process.env.FRONTEND_URLS || process.env.FRONTEND_URL || "http://localhost:3000";
-const allowedOrigins = rawOrigins.split(",").map((u) => u.trim()).filter(Boolean);
+const rawOrigins =
+  process.env.FRONTEND_URLS ||
+  process.env.FRONTEND_URL ||
+  "http://localhost:3000";
+const allowedOrigins = rawOrigins
+  .split(",")
+  .map((u) => u.trim())
+  .filter(Boolean);
 
 const corsOptions = {
   origin: function (origin, callback) {
@@ -19,10 +26,18 @@ const corsOptions = {
     // Provide two ways to relax CORS in production:
     // - Set FRONTEND_URLS to a comma-separated list that includes your frontend domain(s)
     // - Or set ALLOW_ALL_CORS=true to allow any origin (use only if you understand the risks)
-    const allowAll = String(process.env.ALLOW_ALL_CORS || "false").toLowerCase() === "true";
+    const allowAll =
+      String(process.env.ALLOW_ALL_CORS || "false").toLowerCase() === "true";
     // Log origin and current whitelist for easier debugging on hosts like Render
     if (process.env.NODE_ENV !== "production") {
-      console.log("CORS check - origin:", origin, "allowedOrigins:", allowedOrigins, "allowAll:", allowAll);
+      console.log(
+        "CORS check - origin:",
+        origin,
+        "allowedOrigins:",
+        allowedOrigins,
+        "allowAll:",
+        allowAll
+      );
     }
 
     if (!origin) return callback(null, true);
@@ -37,19 +52,28 @@ const corsOptions = {
 };
 
 // Middlewares
-console.log('Registering CORS middleware');
+console.log("Registering CORS middleware");
 app.use(cors(corsOptions));
-console.log('Skipping explicit app.options registration (using app.use cors middleware for preflight)');
-console.log('Registering body parsers');
+console.log(
+  "Skipping explicit app.options registration (using app.use cors middleware for preflight)"
+);
+console.log("Registering body parsers");
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // API Routes
 try {
-  console.log("Mounting route '/api/notes' with documentRoutes type:", typeof documentRoutes);
+  console.log(
+    "Mounting route '/api/notes' with documentRoutes type:",
+    typeof documentRoutes
+  );
   app.use("/api/notes", documentRoutes);
+  app.use("/api/admin", adminRoutes);
 } catch (err) {
-  console.error("Error mounting /api/notes:", err && err.stack ? err.stack : err);
+  console.error(
+    "Error mounting /api/notes:",
+    err && err.stack ? err.stack : err
+  );
   // Re-throw so process exits (we want to see the original error in dev)
   throw err;
 }
@@ -84,10 +108,16 @@ app.get("/", (req, res) => {
 // (CORS, routes) without a real MongoDB connection. Do NOT use SKIP_DB in production.
 const connectDB = (retries = 5) => {
   if (!process.env.MONGO_URI) {
-    console.warn("MONGO_URI not set. To run without DB, set SKIP_DB=true or provide a valid MONGO_URI.");
+    console.warn(
+      "MONGO_URI not set. To run without DB, set SKIP_DB=true or provide a valid MONGO_URI."
+    );
     if (String(process.env.SKIP_DB || "").toLowerCase() === "true") {
-      console.log("SKIP_DB=true — starting server without MongoDB for debug/testing.");
-      app.listen(PORT, () => console.log(`🚀 Server running at port ${PORT} (DB skipped)`));
+      console.log(
+        "SKIP_DB=true — starting server without MongoDB for debug/testing."
+      );
+      app.listen(PORT, () =>
+        console.log(`🚀 Server running at port ${PORT} (DB skipped)`)
+      );
       return;
     }
   }
